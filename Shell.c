@@ -47,18 +47,30 @@ char **divLinha(char *buffer){
 }
 
 /* Essa função tem coomo finalidade interpretar o comando relacionado a execução de programas. */
-int progFunc(char **listaPalavras){
-	// if(acabou == 1){
-	// 	status = fork();
-	// 	if(!status){
-	// 		execve(comando,NULL,NULL);
-	// 		printf("miniShell: %s: comando não encontrado\n",comando);
-	// 		exit(0);
-	// 	}
-	// 	else{
-	// 		waitpid(-1,&status,0);
-	// 	}
-	// }
+int progFunc(char **listaPalavras, int tam){
+	int status;
+	if(tam == 1){
+		status = fork();
+		if(!status){
+			execve(listaPalavras[0],NULL,NULL);
+			printf("miniShell: %s: comando não encontrado\n",listaPalavras[0]);
+			exit(0);
+		}
+		else{
+			waitpid(-1,&status,0);
+		}
+	}
+
+	if(tam == 2 && strcmp(listaPalavras[1],"&") == 0){
+		status = fork();
+		if(!status){
+			execve(listaPalavras[0],NULL,NULL);
+			printf("miniShell: %s: comando não encontrado\n",listaPalavras[0]);
+			exit(0);
+		}
+		return status;
+	}
+
 	return 0;
 }
 
@@ -94,7 +106,8 @@ int interComando(char *buffer){
 	}
 
 	// Caso nenhum desses comandos ele vai interpretar como os casos de prog.	
-	status = progFunc(listaPalavras);
+	status = progFunc(listaPalavras, tam); // status caso tenha programa em background tera o pid do processo filho.
+
 	return 1;
 }
 
