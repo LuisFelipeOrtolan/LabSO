@@ -9,62 +9,110 @@
 #include <sys/wait.h>
 #include <string.h>
 
-char *le_comando(char *linha, int *indice, int *cabou){
-	char *sublinha = malloc(255 * sizeof(char)); 
+/* Essa função tem a finalidade de  colocar todas as palavras presentes no buffer dentro de um vetor 
+ * de string.
+ * OBS: a função strtok é utilizada para devidir uma string dado um delimitador. Essa função destroi a
+ * a string posteriormente, por isso foi necessario fazer uma copia do buffer.		 */
+char **divLinha(char *buffer){
+	char *aux; // Variavel auxiliar para armazenar palavras do buffer.
+	int cont = 0;
+	int i = 0;
 
-	int i;
-	for(i = 0; linha[*indice] != '\0' && linha[*indice] != ' '; *indice  = *indice + 1){
-		sublinha[i] = linha[*indice];
-		i++;
+	char *copiaBuffer = malloc(sizeof(char) * strlen(buffer+1));
+	strcpy(copiaBuffer,buffer); // Copia o buffer para outra variavel para utilizar a funcao strtok
+
+	/* Conta a quantidade de palavras dentro do buffer. */
+	aux = strtok(buffer," ");
+	while(aux != NULL){
+		cont++;
+		aux = strtok(NULL," ");
 	}
 
-	
-	if(linha[*indice] == ' '){
-		*cabou = 0;
-		while(linha[*indice] == ' ' && linha[*indice] != '\0')
-			*indice  = *indice + 1;
+	/* Instancia o vetor de strings com o tamanho referente a quantidade de palavras. */
+	char **listaParametros = malloc(sizeof(char *) * cont);
+
+	/* Encontra todas as palavras e coloca dentro do vetor de strings. */
+	aux = strtok(copiaBuffer," ");
+	listaParametros[i] = malloc( (strlen(aux)+1) * sizeof(char));
+	listaParametros[i] = aux;
+
+	for(i = 1; i < cont; i ++){
+		aux = strtok(NULL," ");
+		listaParametros[i] = malloc( (strlen(aux)+1) * sizeof(char));
+		listaParametros[i] = aux;
 
 	}
-	if(linha[*indice] == '\0')
-		*cabou = 1;
 
-	sublinha[i] = '\0';
-	return sublinha;
+	return listaParametros; // Retorna o vetor de strings com todas as palavras do buffer.
 }
 
-int main(){
-
-	// char buffer[255]; // Buffer para ler o comando.
-	// pid_t pid; // Variavel para guardar o PID do processo.
-	// char **vet = NULL;
-	// int status;
-	// int indice = 0;
-	// do{
-	// 	printf("$");
-	// 	fgets(buffer,254,stdin);
-	// 	buffer[strlen(buffer)-1] = '\0';
-	// 	pid = fork();
-	// 	if(!pid){
-	// 		execve(buffer,vet,NULL);
+/* Essa função tem coomo finalidade interpretar o comando relacionado a execução de programas. */
+int progFunc(char **listaPalavras){
+	// if(acabou == 1){
+	// 	status = fork();
+	// 	if(!status){
+	// 		execve(comando,NULL,NULL);
+	// 		printf("miniShell: %s: comando não encontrado\n",comando);
 	// 		exit(0);
 	// 	}
 	// 	else{
-	// 		waitpid(-1,&status,0); // Processo pai espera o filho.
+	// 		waitpid(-1,&status,0);
 	// 	}
-
-	// }while(strcmp(buffer,"exit") != 0);
-
-	char buffer[255];
-	fgets(buffer,254,stdin);
-
-	int i = 0;
-	int cabou = 0;
-	while(cabou == 0){
-		char *sublinha = le_comando(buffer,&i,&cabou);
-
-		printf("%s\n",sublinha);
-		printf("%d\n",i);
-		printf("%d\n",cabou);
+	// }
+	return 0;
 }
+
+/* Essa função tem como finalidade identificar o comando. */ // A ideia é essa funcao meio que organizar a logica, ai tera uma função pra cada funcionalidade do shell.
+int interComando(char *buffer){ 
+	int status;  // Guarda o status para auxiliar no valor de retorno da função.
+	char ** listaPalavras; // Guarda as palavras presentes no buffer.
+	listaPalavras = divLinha(buffer);
+
+	int tam = 0; // Guarda o tamanho do vetor de strings.
+	while(listaPalavras[tam] != NULL)
+		tam++;
+
+
+
+	if(strcmp(listaPalavras[0],"pwd") == 0 && tam == 1){
+
+	}
+	if(strcmp(listaPalavras[0],"job") == 0 && tam == 1){
+		
+	}
+	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 1){
+		
+	}
+	if(strcmp(listaPalavras[0],"bg") == 0 && tam == 1){
+		
+	}
+	if(strcmp(listaPalavras[0],"cd") == 0 && tam == 1){
+		
+	}
+	if(strcmp(listaPalavras[0],"exit") == 0 && tam == 1){
+		return 0;
+	}
+
+	// Caso nenhum desses comandos ele vai interpretar como os casos de prog.	
+	status = progFunc(listaPalavras);
+	return 1;
+}
+
+
+
+int main(){
+
+	char buffer[255]; // Buffer para ler o comando.
+	int resp;
+
+	do{
+
+		printf("$");
+		fgets(buffer,254,stdin);
+		buffer[strlen(buffer)-1] = '\0';
+		resp = interComando(buffer);
+
+	}while(resp);
+
 	return 0;
 }
