@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -113,6 +115,34 @@ int progFunc(char **listaPalavras, int tam){
 		return status;
 }
 
+int cd(char *listaPalavras, int tam){
+	char caminho[200];
+	getcwd(caminho, sizeof(caminho));
+	if(tam != 2){
+			printf("O comando cd espera um argumento\n");
+			return 1;
+	}
+	FILE *file;
+	if(file = fopen(listaPalavras,"r"))
+		fclose(file);
+	else{
+		printf("Arquivo nao existe\n");
+		return 1;
+	}
+	if(listaPalavras[0] != '/'){
+		char aux[101];
+		strcat(caminho,"/");
+		strcat(caminho,listaPalavras);
+
+		chdir(caminho);
+	}
+	else{
+		strcat(caminho,listaPalavras);
+		chdir(caminho);
+	}
+	return 1;
+}
+
 
 /* Essa função tem como finalidade identificar o comando. */ // A ideia é essa funcao meio que organizar a logica, ai tera uma função pra cada funcionalidade do shell.
 int interComando(char *buffer){ 
@@ -122,7 +152,8 @@ int interComando(char *buffer){
 	listaPalavras = divLinha(buffer,&tam);
 
 	if(strcmp(listaPalavras[0],"pwd") == 0 && tam == 1){
-
+		system("pwd");
+		return 1;
 	}
 	if(strcmp(listaPalavras[0],"job") == 0 && tam == 1){
 		
@@ -133,8 +164,8 @@ int interComando(char *buffer){
 	if(strcmp(listaPalavras[0],"bg") == 0 && tam == 1){
 		
 	}
-	if(strcmp(listaPalavras[0],"cd") == 0 && tam == 1){
-		
+	if(strcmp(listaPalavras[0],"cd") == 0){
+		return cd(listaPalavras[1], tam);
 	}
 	if(strcmp(listaPalavras[0],"exit") == 0 && tam == 1){
 		return 0;
