@@ -114,7 +114,10 @@ int progFunc(char **listaPalavras, int tam){
 		}
 		return status;
 }
-
+/* 	Essa função tem como finalidade implementar o comando cd.
+	Inputs:	listapalavras: o nome do arquivo para o qual se deseja mudar
+			tam: numero de argumentos passados junto com cd
+	Output: retorna 1 para mostrar que o comando foi identificado pelo interpretador */
 int cd(char *listaPalavras, int tam){
 	char caminho[200];
 	getcwd(caminho, sizeof(caminho));
