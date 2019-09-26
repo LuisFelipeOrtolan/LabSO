@@ -95,7 +95,11 @@ int cd(char *listaPalavras, int tam){
 	char caminho[256];
 	getcwd(caminho, sizeof(caminho));
 	if(tam != 2){
-			// colocar pra voltar na home.
+			strcpy(caminho, "/home/");
+			char *aux = NULL;
+			aux = getenv("USER");
+			strcat(caminho,aux);
+			chdir(caminho);
 			return 1;
 	}
 	FILE *file;
