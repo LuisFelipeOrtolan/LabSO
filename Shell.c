@@ -58,37 +58,8 @@ int progFunc(char **listaPalavras, int tam){
 	int status;
 	listaPalavras[tam] = NULL; // Necessario marcar o final do array com NULL se nao da erro Bad Adress.
 
-	/* Execução de programa sem parametros foreground. */
-	if(tam == 1){
-		status = fork();
-		if(!status){
-			int erro = execve(listaPalavras[0],listaPalavras,NULL);
-			if(erro == -1)
-				printf("erro encontrado: %s\n",strerror(errno));
-			printf("miniShell: %s: comando não encontrado\n",listaPalavras[0]);
-			exit(0);
-		}
-		else{
-			waitpid(-1,&status,0);
-		}
-		return status;
-	}
-
-	/* Execução de programa sem parametros background. */
-	if(tam == 2 && strcmp(listaPalavras[1],"&") == 0){
-		status = fork();
-		if(!status){
-			int erro = execve(listaPalavras[0],listaPalavras,NULL);
-			if(erro == -1)
-				printf("erro encontrado: %s\n",strerror(errno));
-			printf("miniShell: %s: comando não encontrado\n",listaPalavras[0]);
-			exit(0);
-		}
-		return status;
-	}
-
 	/* Execução de programa com parametros background. */
-	if(tam >= 2 && (strcmp(listaPalavras[tam-1],"&") == 0) ){
+	if((strcmp(listaPalavras[tam-1],"&") == 0)){
 		status = fork();
 		if(!status){
 			int erro = execve(listaPalavras[0],listaPalavras,NULL);
@@ -99,8 +70,9 @@ int progFunc(char **listaPalavras, int tam){
 		}
 		return status;	
 	}
-
-	/* Execução de programa com parametros foreground. */
+	else{
+		/* Execução de programa com parametros foreground. */
+		printf("forground\n");
 		status = fork();
 		if(!status){
 			int erro = execve(listaPalavras[0],listaPalavras,NULL);
@@ -113,16 +85,18 @@ int progFunc(char **listaPalavras, int tam){
 			waitpid(-1,&status,0);
 		}
 		return status;
+	}
 }
+
 /* 	Essa função tem como finalidade implementar o comando cd.
 	Inputs:	listapalavras: o nome do arquivo para o qual se deseja mudar
 			tam: numero de argumentos passados junto com cd
 	Output: retorna 1 para mostrar que o comando foi identificado pelo interpretador */
 int cd(char *listaPalavras, int tam){
-	char caminho[200];
+	char caminho[256];
 	getcwd(caminho, sizeof(caminho));
 	if(tam != 2){
-			printf("O comando cd espera um argumento\n");
+			// colocar pra voltar na home.
 			return 1;
 	}
 	FILE *file;
@@ -146,17 +120,31 @@ int cd(char *listaPalavras, int tam){
 	return 1;
 }
 
+int pwd(){
+	char dir[256];
+	if(getcwd(dir,sizeof(dir)) != NULL){
+		printf("%s\n",dir);
+		return 1;
+	}
+	else{
+		printf("erro encontrado: %s\n",strerror(errno));
+		return 0;
+	}
+}
 
 /* Essa função tem como finalidade identificar o comando. */ // A ideia é essa funcao meio que organizar a logica, ai tera uma função pra cada funcionalidade do shell.
-int interComando(char *buffer){ 
+int interComando(char *buffer){
+	/* Caso seja apenas um "enter", apenas printa de novo o simbolo de prompt. */
+	if(buffer[0] == '\0')
+		return 1;
+
 	int status;  // Guarda o status para auxiliar no valor de retorno da função.
 	char ** listaPalavras; // Guarda as palavras presentes no buffer.
 	int tam = 0; // Guarda o tamanho do vetor de strings.
 	listaPalavras = divLinha(buffer,&tam);
 
 	if(strcmp(listaPalavras[0],"pwd") == 0 && tam == 1){
-		system("pwd");
-		return 1;
+		return pwd();
 	}
 	if(strcmp(listaPalavras[0],"job") == 0 && tam == 1){
 		
@@ -173,9 +161,14 @@ int interComando(char *buffer){
 	if(strcmp(listaPalavras[0],"exit") == 0 && tam == 1){
 		return 0;
 	}
+	if(strcmp(listaPalavras[0],"clear") == 0 && tam == 1){
+		printf("\e[1;1H\e[2J"); // Limpa o terminal.
+		return 1;
+	}
 
 	// Caso nenhum desses comandos ele vai interpretar como os casos de prog.	
 	status = progFunc(listaPalavras, tam); // status caso tenha programa em background tera o pid do processo filho.
+	free(listaPalavras);
 	return 1;
 }
 
@@ -184,15 +177,17 @@ int interComando(char *buffer){
 int main(){
 
 	char buffer[255]; // Buffer para ler o comando.
+	memset(buffer,0,sizeof(buffer));
 	int resp;
 	printf("\e[1;1H\e[2J");// Limpa o terminal antes de inicilizar o miniShell.
 
 	do{
 
-		printf("$");
+		printf("$ ");
 		fgets(buffer,254,stdin);
 		buffer[strlen(buffer)-1] = '\0';
 		resp = interComando(buffer);
+		memset(buffer,0,sizeof(buffer));
 
 	}while(resp);
 

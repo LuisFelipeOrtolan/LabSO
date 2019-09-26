@@ -1,4 +1,4 @@
-/* Programa basico teste para o execve, printando os argumento de arc e argv. */s
+/* Programa basico teste para o execve, printando os argumento de arc e argv. */
 #include <stdio.h>
 #include <unistd.h>
 int main(int argc, char *argv[]){
