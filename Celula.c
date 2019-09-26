@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "Celula.h"
 
+Celula *lst = NULL;
+
 void insere(Celula **lst, pid_t pid){
 	Celula *nova;
 	nova = malloc(sizeof(Celula));
@@ -46,9 +48,16 @@ Celula *selecao(Celula *lst, int pos){
 	return p;
 }
 
-void retira(Celula **p){
-	Celula *morta;
-	morta = *p;
-	*p = morta->prox;
-	free(morta);
+void retira(Celula *lst, pid_t pid){
+	Celula *p, *q;
+	p = lst;
+	q = lst->prox;
+	while(q != NULL && q->pid != pid){
+		p = q;
+		q = q->prox;
+	}
+	if(q != NULL){
+		p->prox = q->prox;
+		free(q);
+	}
 }
