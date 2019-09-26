@@ -6,14 +6,22 @@ void insere(Celula **lst, pid_t pid){
 	Celula *nova;
 	nova = malloc(sizeof(Celula));
 	nova->pid = pid;
-	nova->prox = *lst;
-	*lst = nova;
+	nova->prox = NULL;
+	if(*lst == NULL)
+		*lst = nova;
+	else{
+		Celula *p = *lst;
+		while(p->prox != NULL){
+			p = p->prox;
+		}
+		p->prox = nova;
+	}
 }
 
 void imprime(Celula *lst){
 	Celula *p = lst;
 	while(p != NULL){
-		printf("%d", p->pid);
+		printf("%d\n", p->pid);
 		p = p->prox;
 	}
 	printf("\n");
