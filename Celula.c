@@ -20,8 +20,10 @@ void insere(Celula **lst, pid_t pid){
 
 void imprime(Celula *lst){
 	Celula *p = lst;
+	int i = 1;
 	while(p != NULL){
-		printf("%d\n", p->pid);
+		printf("[%d] %d\n", i, p->pid);
+		i++;
 		p = p->prox;
 	}
 	printf("\n");
