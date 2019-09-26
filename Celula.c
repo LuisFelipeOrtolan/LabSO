@@ -24,7 +24,7 @@ void imprime(Celula *lst){
 	Celula *p = lst;
 	int i = 1;
 	while(p != NULL){
-		printf("[%d] %d\n", i, p->pid);
+		printf("[%d] Executando %d\n", i, p->pid);
 		i++;
 		p = p->prox;
 	}
@@ -48,10 +48,12 @@ Celula *selecao(Celula *lst, int pos){
 	return p;
 }
 
-void retira(Celula *lst, pid_t pid){
+Celula * retira(Celula *lst, pid_t pid){
 	Celula *p, *q;
 	p = lst;
 	q = lst->prox;
+	if(p->pid == pid)
+		return p->prox;
 	while(q != NULL && q->pid != pid){
 		p = q;
 		q = q->prox;
@@ -59,5 +61,7 @@ void retira(Celula *lst, pid_t pid){
 	if(q != NULL){
 		p->prox = q->prox;
 		free(q);
+		return lst;
 	}
+	return lst;
 }

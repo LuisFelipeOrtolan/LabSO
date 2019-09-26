@@ -135,9 +135,24 @@ int pwd(){
 		return 0;
 	}
 }
+/*Verifica se os processos em segundo plano já acabaram*/
+void processoFinalizado(){
+	Celula *p = ini;
+	int stat = 1;
+	while(p != NULL){
+		stat = waitpid(p->pid, NULL, WNOHANG);
+		if(stat != 0){
+			printf("Processo de pid %d finalizado\n", p->pid);
+			ini = retira(ini, p->pid);
+		}
+		p = p->prox;
+	}
+}
 
 /* Essa função tem como finalidade identificar o comando. */ // A ideia é essa funcao meio que organizar a logica, ai tera uma função pra cada funcionalidade do shell.
 int interComando(char *buffer){
+	processoFinalizado();
+
 	/* Caso seja apenas um "enter", apenas printa de novo o simbolo de prompt. */
 	if(buffer[0] == '\0')
 		return 1;
@@ -154,10 +169,14 @@ int interComando(char *buffer){
 		imprime(ini);
 		return 1;
 	}
-	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 1){
+	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 2){
+		pid_t pid;
+		pid = sscanf("%d", listaPalavras[1]);
+		waitpid(pid, NULL, 0);
+		return 1;
 		
 	}
-	if(strcmp(listaPalavras[0],"bg") == 0 && tam == 1){
+	if(strcmp(listaPalavras[0],"bg") == 0 && tam == 2){
 		
 	}
 	if(strcmp(listaPalavras[0],"cd") == 0){
