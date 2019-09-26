@@ -1,16 +1,15 @@
 /* Primeiro trabalho de lab de SO. */
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <sys/wait.h>
 #include <string.h>
 #include <errno.h>
+#include "Celula.h"
 
 extern int errno; // Variavel utilizada para guardar erros ocorridos.
 
