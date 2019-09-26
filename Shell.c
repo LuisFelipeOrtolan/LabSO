@@ -13,6 +13,8 @@
 
 extern int errno; // Variavel utilizada para guardar erros ocorridos.
 
+Celula *ini = NULL;
+
 /* Essa função tem a finalidade de  colocar todas as palavras presentes no buffer dentro de um vetor 
  * de string.
  * OBS: a função strtok é utilizada para devidir uma string dado um delimitador. Essa função destroi a
@@ -71,7 +73,6 @@ int progFunc(char **listaPalavras, int tam){
 	}
 	else{
 		/* Execução de programa com parametros foreground. */
-		printf("forground\n");
 		status = fork();
 		if(!status){
 			int erro = execve(listaPalavras[0],listaPalavras,NULL);
@@ -81,9 +82,9 @@ int progFunc(char **listaPalavras, int tam){
 			exit(0);
 		}
 		else{
-			waitpid(-1,&status,0);
+			waitpid(status,NULL,0);
 		}
-		return status;
+		return -1;
 	}
 }
 
@@ -149,8 +150,9 @@ int interComando(char *buffer){
 	if(strcmp(listaPalavras[0],"pwd") == 0 && tam == 1){
 		return pwd();
 	}
-	if(strcmp(listaPalavras[0],"job") == 0 && tam == 1){
-		
+	if(strcmp(listaPalavras[0],"jobs") == 0 && tam == 1){
+		imprime(ini);
+		return 1;
 	}
 	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 1){
 		
@@ -171,6 +173,9 @@ int interComando(char *buffer){
 
 	// Caso nenhum desses comandos ele vai interpretar como os casos de prog.	
 	status = progFunc(listaPalavras, tam); // status caso tenha programa em background tera o pid do processo filho.
+	if(status != -1){
+		insere(&ini, status);
+	}
 	free(listaPalavras);
 	return 1;
 }
