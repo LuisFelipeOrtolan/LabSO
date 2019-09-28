@@ -10,10 +10,13 @@
 #include <string.h>
 #include <errno.h>
 #include "Celula.h"
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <signal.h>
 
 extern int errno; // Variavel utilizada para guardar erros ocorridos.
 
-Celula *ini = NULL;
+Celula *ini = NULL; // Ponteiro para a lista encadeada usada para o comando "jobs".
 
 /* Essa função tem a finalidade de  colocar todas as palavras presentes no buffer dentro de um vetor 
  * de string.
@@ -57,17 +60,112 @@ char **divLinha(char *buffer, int *tam){
  * OBS: o argc é calculado no load, sabendo a primeira ocorrencia do NULL no argv. */
 int progFunc(char **listaPalavras, int tam){
 	int status;
+	int i = 0;
+	/* Guarda o indice do ">" e "<" encontrados. */
+	int indIn,indOut,indOutAp,indOutErro,indOutErroAp;
+	/* Variaveis logicas para ">" e "<". */
+	int achouIn = 0;
+	int achouOut = 0;
+	int achouOutAp = 0;
+	int achouOutErro = 0;
+	int achouOutErroAp = 0;
+
 	listaPalavras[tam] = NULL; // Necessario marcar o final do array com NULL se nao da erro Bad Adress.
+
+	/* Procura redirecionadores de I/O "<" e ">". */
+	while(i < tam){
+		if(strcmp(listaPalavras[i],"<") == 0 && !achouIn){
+			achouIn = 1;
+			indIn = i;
+		}
+		if(strcmp(listaPalavras[i],">") == 0 && !achouOut){
+			achouOut = 1;
+			indOut = i;
+		}
+		if(strcmp(listaPalavras[i],">>") == 0 && !achouOut){
+			achouOutAp = 1;
+			indOutAp = i;
+		}
+		if(strcmp(listaPalavras[i],"2>") == 0 && !achouOut){
+			achouOutErro = 1;
+			indOutErro = i;
+		}
+		if(strcmp(listaPalavras[i],"2>>") == 0 && !achouOut){
+			achouOutErroAp = 1;
+			indOutErroAp = i;
+		}
+		i++;
+	}
+
 
 	/* Execução de programa com parametros background. */
 	if((strcmp(listaPalavras[tam-1],"&") == 0)){
 		status = fork();
 		if(!status){
+				if (achouIn) { // Caso tenha encontrado o operado "<"
+				    int fd0;
+				    /* Abre apenas para leitura. */
+				    if ((fd0 = open(listaPalavras[indIn+1], O_RDONLY)) == -1) {
+				        perror (listaPalavras[indIn+1]); // Caso tenha ocorrido um erro.
+				        exit (0);
+				    }
+				    dup2(fd0, 0); // Faz o stdin apontar para o arquivo aberto
+				    close(fd0);
+				}
+
+				if (achouOut)  // Caso tenha encontrado o operado ">"
+				{
+				    int fd1;
+				    /* Abre para escrever, caso nao exista cria o arquivo, limpa o arquivo quandoa aberto. Modos setados para dar os privilegios ao precesso filho. */
+				    if ((fd1 = open(listaPalavras[indOut+1],O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {             
+				        perror(listaPalavras[indOut+1]); // Caso tenha ocorrido um erro.
+				        exit(0);
+				    }
+				    dup2(fd1,1); // Faz o stdout apontar para o arquivo aberto
+				    close(fd1);
+				}
+
+				if (achouOutAp)  // Caso tenha encontrado o operado ">>"
+				{
+				    int fd1;
+				    /* Abre para escrever, caso nao exista cria o arquivo, append o que for escrito. Modos setados para dar os privilegios ao precesso filho. */
+				    if ((fd1 = open(listaPalavras[indOutAp+1],O_WRONLY | O_CREAT | O_APPEND , S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {             
+				        perror(listaPalavras[indOutAp+1]); // Caso tenha ocorrido um erro.
+				        exit(0);
+				    }
+				    dup2(fd1,1); // Faz o stdout apontar para o arquivo aberto
+				    close(fd1);
+				}
+
+				if (achouOutErro)  // Caso tenha encontrado o operado "2>"
+				{
+				    int fd1;
+				    /* Abre para escrever, caso nao exista cria o arquivo, limpa o arquivo quandoa aberto. Modos setados para dar os privilegios ao precesso filho. */
+				    if ((fd1 = open(listaPalavras[indOutErro+1],O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {             
+				        perror(listaPalavras[indOutErro+1]); // Caso tenha ocorrido um erro.
+				        exit(0);
+				    }
+				    dup2(fd1,2); // Faz o stdout apontar para o arquivo aberto
+				    close(fd1);
+				}
+
+				if (achouOutErroAp)  // Caso tenha encontrado o operado "2>>"
+				{
+				    int fd1;
+				    /* Abre para escrever, caso nao exista cria o arquivo, append o que for escrito. Modos setados para dar os privilegios ao precesso filho. */
+				    if ((fd1 = open(listaPalavras[indOutErroAp+1],O_WRONLY | O_CREAT | O_APPEND , S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {             
+				        perror(listaPalavras[indOutErroAp+1]); // Caso tenha ocorrido um erro.
+				        exit(0);
+				    }
+				    dup2(fd1,2); // Faz o stdout apontar para o arquivo aberto
+				    close(fd1);
+				}
+
 			int erro = execve(listaPalavras[0],listaPalavras,NULL);
 			if(erro == -1)
 				printf("erro encontrado: %s\n",strerror(errno));
 			printf("miniShell: %s: comando não encontrado\n",listaPalavras[0]);
-			exit(0);
+			exit(0); // Preciso mandar uma mensagem para o processo pai antes de morrer para conseguir retornar o -1.
 		}
 		return status;	
 	}
@@ -75,6 +173,66 @@ int progFunc(char **listaPalavras, int tam){
 		/* Execução de programa com parametros foreground. */
 		status = fork();
 		if(!status){
+
+				if (achouIn) { // Caso tenha encontrado o operado "<"
+				    int fd0;
+				    /* Abre apenas para leitura. */
+				    if ((fd0 = open(listaPalavras[indIn+1], O_RDONLY)) == -1) { 
+				        perror (listaPalavras[indIn+1]); // Caso tenha ocorrido um erro.
+				        exit (0);
+				    }
+				    dup2(fd0, 0); // Faz o stdin apontar para o arquivo aberto
+				    close(fd0);
+				}
+
+				if (achouOut) // Caso tenha encontrado o operado ">"
+				{
+				    int fd1;
+				    /* Abre para escrever, caso nao exista cria o arquivo, limpa o arquivo quandoa aberto. Modos setados para dar os privilegios ao precesso filho. */
+				    if ((fd1 = open(listaPalavras[indOut+1],O_WRONLY | O_CREAT | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) { 
+				        perror (listaPalavras[indOut+1]); // Caso tenha ocorrido um erro.
+				        exit (0);
+				    }
+				    dup2(fd1, 1); // Faz o stdout apontar para o arquivo aberto
+				    close(fd1);
+				}
+
+				if (achouOutAp)  // Caso tenha encontrado o operado ">>"
+				{
+				    int fd1;
+				    /* Abre para escrever, caso nao exista cria o arquivo, append o que for escrito. Modos setados para dar os privilegios ao precesso filho. */
+				    if ((fd1 = open(listaPalavras[indOutAp+1],O_WRONLY | O_CREAT | O_APPEND , S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {             
+				        perror(listaPalavras[indOutAp+1]); // Caso tenha ocorrido um erro.
+				        exit(0);
+				    }
+				    dup2(fd1,1); // Faz o stdout apontar para o arquivo aberto
+				    close(fd1);
+				}
+
+				if (achouOutErro)  // Caso tenha encontrado o operado "2>"
+				{
+				    int fd1;
+				    /* Abre para escrever, caso nao exista cria o arquivo, limpa o arquivo quandoa aberto. Modos setados para dar os privilegios ao precesso filho. */
+				    if ((fd1 = open(listaPalavras[indOutErro+1],O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {             
+				        perror(listaPalavras[indOutErro+1]); // Caso tenha ocorrido um erro.
+				        exit(0);
+				    }
+				    dup2(fd1,2); // Faz o stdout apontar para o arquivo aberto
+				    close(fd1);
+				}
+
+				if (achouOutErroAp)  // Caso tenha encontrado o operado "2>>"
+				{
+				    int fd1;
+				    /* Abre para escrever, caso nao exista cria o arquivo, append o que for escrito. Modos setados para dar os privilegios ao precesso filho. */
+				    if ((fd1 = open(listaPalavras[indOutErroAp+1],O_WRONLY | O_CREAT | O_APPEND , S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {             
+				        perror(listaPalavras[indOutErroAp+1]); // Caso tenha ocorrido um erro.
+				        exit(0);
+				    }
+				    dup2(fd1,2); // Faz o stdout apontar para o arquivo aberto
+				    close(fd1);
+				}
+
 			int erro = execve(listaPalavras[0],listaPalavras,NULL);
 			if(erro == -1)
 				printf("erro encontrado: %s\n",strerror(errno));
