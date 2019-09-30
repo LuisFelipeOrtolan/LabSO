@@ -1,13 +1,32 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "Celula.h"
 
 Celula *lst = NULL;
+int nroProc = 1;
 
-void insere(Celula **lst, pid_t pid){
+void rearranjaChaves(){
+	Celula *p = lst;
+	while(p != NULL){
+		if(p->chave > nroProc)
+			p->chave--;
+	}
+}
+
+void insere(Celula **lst, pid_t pid, char **listaPalavras, int tam){
 	Celula *nova;
 	nova = malloc(sizeof(Celula));
 	nova->pid = pid;
+	strcpy(nova->estado, "Executando");
+	int i = 0;
+	strcpy(nova->comando, " ");
+	while(i < tam){
+		strcat(nova->comando, listaPalavras[i++]);
+		strcat(nova->comando, " "); 
+	}
+	nova->comando[strlen(nova->comando) - 1] = '\0';
+	nova->chave = nroProc++;
 	nova->prox = NULL;
 	if(*lst == NULL)
 		*lst = nova;
@@ -22,10 +41,14 @@ void insere(Celula **lst, pid_t pid){
 
 void imprime(Celula *lst){
 	Celula *p = lst;
-	int i = 1;
+	int i = 0;
 	while(p != NULL){
-		printf("[%d] Executando %d\n", i, p->pid);
-		i++;
+		printf("[%d]", p->chave);
+		if(p->chave == nroProc - 1)
+			printf("+ ");
+		if(p->chave == nroProc - 2)
+			printf("- ");
+		printf("%s\n", p->estado);
 		p = p->prox;
 	}
 	printf("\n");
@@ -40,10 +63,8 @@ Celula *busca(Celula *lst, pid_t pid){
 
 Celula *selecao(Celula *lst, int pos){
 	Celula *p = lst;
-	int q = 0;
-	while(p != NULL && q < pos){
+	while(p != NULL && p->chave < pos){
 		p = p->prox;
-		q++;
 	}
 	return p;
 }
@@ -61,6 +82,7 @@ Celula * retira(Celula *lst, pid_t pid){
 	if(q != NULL){
 		p->prox = q->prox;
 		free(q);
+		rearranjaChaves();
 		return lst;
 	}
 	return lst;

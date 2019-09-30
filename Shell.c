@@ -169,7 +169,7 @@ void progFunc(char **listaPalavras, int tam){
 			printf("miniShell: %s: comando não encontrado\n",listaPalavras[0]);
 			exit(0); // Preciso mandar uma mensagem para o processo pai antes de morrer para conseguir retornar o -1.
 		}
-		insere(&ini, status);
+		insere(&ini, status, listaPalavras, tam);
 		return;	
 	}
 	else{
@@ -319,7 +319,8 @@ void processoFinalizado(){
 	while(p != NULL){
 		stat = waitpid(p->pid, NULL, WNOHANG);
 		if(stat != 0){
-			printf("Processo de pid %d finalizado\n", p->pid);
+			strcpy(p->estado, "Concluido");
+			printf("[%d] %s %s\n", p->chave, p->estado, p->comando);
 			ini = retira(ini, p->pid);
 		}
 		p = p->prox;
