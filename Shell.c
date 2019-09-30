@@ -18,6 +18,8 @@ extern int errno; // Variavel utilizada para guardar erros ocorridos.
 
 Celula *ini = NULL; // Ponteiro para a lista encadeada usada para o comando "jobs".
 
+pid_t pidForground = -1; // Variavel que guarda o pid do processo em forground.
+
 /* Essa função tem a finalidade de  colocar todas as palavras presentes no buffer dentro de um vetor 
  * de string.
  * OBS: a função strtok é utilizada para devidir uma string dado um delimitador. Essa função destroi a
@@ -58,7 +60,7 @@ char **divLinha(char *buffer, int *tam){
 
 /* Essa função tem coomo finalidade interpretar o comando relacionado a execução de programas.
  * OBS: o argc é calculado no load, sabendo a primeira ocorrencia do NULL no argv. */
-int progFunc(char **listaPalavras, int tam){
+void progFunc(char **listaPalavras, int tam){
 	int status;
 	int i = 0;
 	/* Guarda o indice do ">" e "<" encontrados. */
@@ -167,7 +169,8 @@ int progFunc(char **listaPalavras, int tam){
 			printf("miniShell: %s: comando não encontrado\n",listaPalavras[0]);
 			exit(0); // Preciso mandar uma mensagem para o processo pai antes de morrer para conseguir retornar o -1.
 		}
-		return status;	
+		insere(&ini, status);
+		return;	
 	}
 	else{
 		/* Execução de programa com parametros foreground. */
@@ -240,9 +243,10 @@ int progFunc(char **listaPalavras, int tam){
 			exit(0);
 		}
 		else{
+			pidForground = status;
 			waitpid(status,NULL,0);
 		}
-		return -1;
+		return;
 	}
 }
 
@@ -282,15 +286,30 @@ int cd(char *listaPalavras, int tam){
 	return 1;
 }
 
-int pwd(){
+/* Essa funcao simula o comando pwd, printando o diretório atual na tela. Tem como entrada 
+ * um inteiro para sinalizar a forma que deve ser impresso na tela (com ou sem '\n'), para
+ * ser utilizado junto do sinal de prompt (caso != 1).*/
+int pwd(int opcao){
 	char dir[256];
-	if(getcwd(dir,sizeof(dir)) != NULL){
-		printf("%s\n",dir);
-		return 1;
+	if(opcao == 1){
+		if(getcwd(dir,sizeof(dir)) != NULL){ // Encontra o diretório atual e o guarda dentor de dir.
+			printf("%s\n",dir);
+			return 1;
+		}
+		else{
+			printf("erro encontrado: %s\n",strerror(errno)); // Caso erro seja encontrado.
+			return 0;
+		}
 	}
 	else{
-		printf("erro encontrado: %s\n",strerror(errno));
-		return 0;
+		if(getcwd(dir,sizeof(dir)) != NULL){
+			printf("%s",dir);
+			return 1;
+		}
+		else{
+			printf("erro encontrado: %s\n",strerror(errno));
+			return 0;
+		}
 	}
 }
 /*Verifica se os processos em segundo plano já acabaram*/
@@ -307,6 +326,29 @@ void processoFinalizado(){
 	}
 }
 
+/* Rotina de tratamento para o SIGCHLD, tem como entrada o numero do signal. Essa rotina era checar, por
+ * processos filhos zombies e era devidamente termina-los. */
+void sigchld_rotina(int signum){
+	int status; // status de retorno do processo filho ao terminar.
+	pid_t pid;
+	for(int i = 0; i < 20; i++) // for de 0 a 20, para caso um processo filho termine dentro da rotina de tratamento do SIGCHLD.
+		pid = waitpid(-1,&status,WNOHANG); // WNOHANG checa por zombies.	
+}
+
+/* Rotina de tratamento para o SIGINT, tem como entrada o numero do signal. Essa rotina termina o processo em forground. */
+void sigint_rotina(int signum){
+	if(pidForground != -1){
+		int error = kill(pidForground, SIGKILL); // Envia o sinal SIGKILL para o processo em forground.
+		if(error != 0) // Caso encontrou um erro.
+			printf("erro encontrado ao matar processo (%d): %s\n",pidForground, strerror(errno));
+		printf("\n");
+	}
+	else{
+		printf("\n");
+	}
+}
+
+
 /* Essa função tem como finalidade identificar o comando. */ // A ideia é essa funcao meio que organizar a logica, ai tera uma função pra cada funcionalidade do shell.
 int interComando(char *buffer){
 	processoFinalizado();
@@ -321,14 +363,14 @@ int interComando(char *buffer){
 	listaPalavras = divLinha(buffer,&tam);
 
 	if(strcmp(listaPalavras[0],"pwd") == 0 && tam == 1){
-		return pwd();
+		return pwd(1);
 	}
 	if(strcmp(listaPalavras[0],"jobs") == 0 && tam == 1){
 		imprime(ini);
 		return 1;
 	}
-	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 2){
-		pid_t pid;
+	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 2){ // Na verdade nao armazenamos os pids dos processos, só o comando e o estado deles, o fg e bg pegam por indice. ou vazio
+		pid_t pid;                                      // utilizando o + como o ultimo colocado na lista e o que sera chamado e o - como o penultimo.
 		pid = sscanf("%d", listaPalavras[1]);
 		waitpid(pid, NULL, 0);
 		return 1;
@@ -349,10 +391,13 @@ int interComando(char *buffer){
 	}
 
 	// Caso nenhum desses comandos ele vai interpretar como os casos de prog.	
-	status = progFunc(listaPalavras, tam); // status caso tenha programa em background tera o pid do processo filho.
-	if(status != -1){
-		insere(&ini, status);
-	}
+	progFunc(listaPalavras, tam);
+	pidForground = -1; // Atualiza o pid do processo em forground como invalido.
+
+	// if(status != -1){ // Foi transferido para a função profFunc.
+	// 	insere(&ini, status);
+	// }
+
 	free(listaPalavras);
 	return 1;
 }
@@ -364,10 +409,15 @@ int main(){
 	char buffer[255]; // Buffer para ler o comando.
 	memset(buffer,0,sizeof(buffer));
 	int resp;
+	// signal(SIGTSTP,sigtstp_rotina); // Tratar SIGTSTP. esse aqui que vai ser usado para parar o processo em forground...
+	signal(SIGINT,sigint_rotina); // Tratar SIGINT. (ctrl+c)
+	signal(SIGCHLD,sigchld_rotina); // Tratar SIGCHLD.
 	printf("\e[1;1H\e[2J");// Limpa o terminal antes de inicilizar o miniShell.
 
 	do{
 
+		printf("[miniShell]:");
+		pwd(0);
 		printf("$ ");
 		fgets(buffer,254,stdin);
 		buffer[strlen(buffer)-1] = '\0';
