@@ -349,6 +349,16 @@ void sigint_rotina(int signum){
 	}
 }
 
+void sigtstp_rotina(int signum){
+	if(pidForground != -1){
+		Celula *p;
+		p = busca(ini,pidForground);
+		strcpy(p->estado, "Parado");
+		printf("[%d]", p->chave);
+		printf("%s\n", p->comando);
+	}
+}
+
 
 /* Essa função tem como finalidade identificar o comando. */ // A ideia é essa funcao meio que organizar a logica, ai tera uma função pra cada funcionalidade do shell.
 int interComando(char *buffer){
@@ -410,7 +420,7 @@ int main(){
 	char buffer[255]; // Buffer para ler o comando.
 	memset(buffer,0,sizeof(buffer));
 	int resp;
-	// signal(SIGTSTP,sigtstp_rotina); // Tratar SIGTSTP. esse aqui que vai ser usado para parar o processo em forground...
+	signal(SIGTSTP,sigtstp_rotina); // Tratar SIGTSTP. esse aqui que vai ser usado para parar o processo em forground...
 	signal(SIGINT,sigint_rotina); // Tratar SIGINT. (ctrl+c)
 	signal(SIGCHLD,sigchld_rotina); // Tratar SIGCHLD.
 	printf("\e[1;1H\e[2J");// Limpa o terminal antes de inicilizar o miniShell.

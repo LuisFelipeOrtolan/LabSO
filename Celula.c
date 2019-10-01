@@ -37,6 +37,12 @@ void insere(Celula **lst, pid_t pid, char **listaPalavras, int tam){
 		}
 		p->prox = nova;
 	}
+	printf("[%d]",nova->chave);
+	if(nova->chave == nroProc - 1)
+		printf("+ ");
+	if(nova->chave == nroProc - 2)
+		printf("- ");
+	printf("%d\n", nova->pid);
 }
 
 void imprime(Celula *lst){
