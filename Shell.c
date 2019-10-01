@@ -19,6 +19,8 @@ extern int errno; // Variavel utilizada para guardar erros ocorridos.
 Celula *ini = NULL; // Ponteiro para a lista encadeada usada para o comando "jobs".
 
 pid_t pidForground = -1; // Variavel que guarda o pid do processo em forground.
+char **ultimoComando; // Variavel que armazena o ultimo comando.
+int tamComando; // Variavel que armazena o tamanho do ultimo comando
 
 /* Essa função tem a finalidade de  colocar todas as palavras presentes no buffer dentro de um vetor 
  * de string.
@@ -244,7 +246,7 @@ void progFunc(char **listaPalavras, int tam){
 		}
 		else{
 			pidForground = status;
-			waitpid(status,NULL,0);
+			waitpid(status,NULL,WUNTRACED);
 		}
 		return;
 	}
@@ -351,11 +353,16 @@ void sigint_rotina(int signum){
 
 void sigtstp_rotina(int signum){
 	if(pidForground != -1){
-		Celula *p;
+		Celula *p = NULL;
+		int error = kill(pidForground,SIGTSTP);
+		if(error != 0){
+			printf("erro encontrado ao matar processo (%d): %s\n", pidForground, strerror(errno));
+			return;
+		}
+		insere(&ini, pidForground, ultimoComando, tamComando);
 		p = busca(ini,pidForground);
-		strcpy(p->estado, "Parado");
-		printf("[%d]", p->chave);
-		printf("%s\n", p->comando);
+		strcpy(p->estado, "Parado ");
+		printf("[%d] %s %s\n", p->chave, p->estado, p->comando); 
 	}
 }
 
@@ -372,7 +379,8 @@ int interComando(char *buffer){
 	char ** listaPalavras; // Guarda as palavras presentes no buffer.
 	int tam = 0; // Guarda o tamanho do vetor de strings.
 	listaPalavras = divLinha(buffer,&tam);
-
+	ultimoComando = listaPalavras;
+	tamComando = tam;
 	if(strcmp(listaPalavras[0],"pwd") == 0 && tam == 1){
 		return pwd(1);
 	}
@@ -388,7 +396,11 @@ int interComando(char *buffer){
 		
 	}
 	if(strcmp(listaPalavras[0],"bg") == 0 && tam == 2){
-		
+		Celula *p;
+		p = selecao(ini, listaPalavras[1]);
+		strcpy(p->estado, "Exec ");
+		kill(p->pid, SIGCONT);
+		return 1;
 	}
 	if(strcmp(listaPalavras[0],"cd") == 0){
 		return cd(listaPalavras[1], tam);
@@ -434,7 +446,6 @@ int main(){
 		buffer[strlen(buffer)-1] = '\0';
 		resp = interComando(buffer);
 		memset(buffer,0,sizeof(buffer));
-
 	}while(resp);
 
 	return 0;

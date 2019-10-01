@@ -18,9 +18,10 @@ void insere(Celula **lst, pid_t pid, char **listaPalavras, int tam){
 	Celula *nova;
 	nova = malloc(sizeof(Celula));
 	nova->pid = pid;
-	strcpy(nova->estado, "Executando");
+	strcpy(nova->estado, "Exec ");
 	int i = 0;
-	strcpy(nova->comando, " ");
+	strcpy(nova->comando, listaPalavras[i++]);
+	strcat(nova->comando, " ");
 	while(i < tam){
 		strcat(nova->comando, listaPalavras[i++]);
 		strcat(nova->comando, " "); 
@@ -54,7 +55,8 @@ void imprime(Celula *lst){
 			printf("+ ");
 		if(p->chave == nroProc - 2)
 			printf("- ");
-		printf("%s\n", p->estado);
+		printf("%s", p->estado );
+		printf("%s \n", p->comando);
 		p = p->prox;
 	}
 	printf("\n");
@@ -86,6 +88,8 @@ Celula * retira(Celula *lst, pid_t pid){
 		q = q->prox;
 	}
 	if(q != NULL){
+		nroProc--;
+		printf("hello (%d)\n", nroProc);
 		p->prox = q->prox;
 		free(q);
 		rearranjaChaves();
