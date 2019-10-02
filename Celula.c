@@ -18,7 +18,7 @@ void insere(Celula **lst, pid_t pid, char **listaPalavras, int tam){
 	Celula *nova;
 	nova = malloc(sizeof(Celula));
 	nova->pid = pid;
-	strcpy(nova->estado, "Exec ");
+	strcpy(nova->estado, "Executando ");
 	int i = 0;
 	strcpy(nova->comando, listaPalavras[i++]);
 	strcat(nova->comando, " ");
@@ -38,12 +38,6 @@ void insere(Celula **lst, pid_t pid, char **listaPalavras, int tam){
 		}
 		p->prox = nova;
 	}
-	printf("[%d]",nova->chave);
-	if(nova->chave == nroProc - 1)
-		printf("+ ");
-	if(nova->chave == nroProc - 2)
-		printf("- ");
-	printf("%d\n", nova->pid);
 }
 
 void imprime(Celula *lst){

@@ -5,8 +5,8 @@
 typedef struct celula Celula;
 struct celula{
 	pid_t pid;
-	char estado[10];
-	char comando[100];
+	char estado[30];
+	char comando[255];
 	int chave;
 	Celula *prox;
 };

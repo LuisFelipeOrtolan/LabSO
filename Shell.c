@@ -31,7 +31,7 @@ char **divLinha(char *buffer, int *tam){
 	int cont = 0;
 	int i = 0;
 
-	char *copiaBuffer = malloc(sizeof(char) * strlen(buffer+1));
+	char *copiaBuffer = malloc(sizeof(char) * (strlen(buffer)+1));
 	strcpy(copiaBuffer,buffer); // Copia o buffer para outra variavel para utilizar a funcao strtok
 
 	/* Conta a quantidade de palavras dentro do buffer. */
@@ -172,6 +172,9 @@ void progFunc(char **listaPalavras, int tam){
 			exit(0); // Preciso mandar uma mensagem para o processo pai antes de morrer para conseguir retornar o -1.
 		}
 		insere(&ini, status, listaPalavras, tam);
+		Celula *processo = busca(ini,status);
+		printf("[%d]",processo->chave);
+		printf(" %d\n",processo->pid);
 		return;	
 	}
 	else{
@@ -335,7 +338,7 @@ void sigchld_rotina(int signum){
 	int status; // status de retorno do processo filho ao terminar.
 	pid_t pid;
 	for(int i = 0; i < 20; i++) // for de 0 a 20, para caso um processo filho termine dentro da rotina de tratamento do SIGCHLD.
-		pid = waitpid(-1,&status,WNOHANG); // WNOHANG checa por zombies.	
+		pid = waitpid(-1,&status,WNOHANG); // WNOHANG checa por zombies.
 }
 
 /* Rotina de tratamento para o SIGINT, tem como entrada o numero do signal. Essa rotina termina o processo em forground. */
@@ -362,7 +365,7 @@ void sigtstp_rotina(int signum){
 		insere(&ini, pidForground, ultimoComando, tamComando);
 		p = busca(ini,pidForground);
 		strcpy(p->estado, "Parado ");
-		printf("[%d] %s %s\n", p->chave, p->estado, p->comando); 
+		printf("\n[%d] %s %s\n", p->chave, p->estado, p->comando); 
 	}
 }
 
@@ -397,8 +400,9 @@ int interComando(char *buffer){
 	}
 	if(strcmp(listaPalavras[0],"bg") == 0 && tam == 2){
 		Celula *p;
-		p = selecao(ini, listaPalavras[1]);
-		strcpy(p->estado, "Exec ");
+		int pos = atoi(listaPalavras[1]);
+		p = selecao(ini, pos);
+		strcpy(p->estado, "Executando ");
 		kill(p->pid, SIGCONT);
 		return 1;
 	}
