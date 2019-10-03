@@ -53,7 +53,6 @@ void imprime(Celula *lst){
 		printf("%s \n", p->comando);
 		p = p->prox;
 	}
-	printf("\n");
 }
 
 Celula *busca(Celula *lst, pid_t pid){

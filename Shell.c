@@ -373,6 +373,23 @@ void sigtstp_rotina(int signum){
 	}
 }
 
+int fg(char **listaPalavras){
+	pid_t pid;                  
+	int pos = atoi(listaPalavras[1]);
+	Celula *p = selecao(ini,pos);
+	pidForground = p->pid;
+	waitpid(p->pid,NULL,WUNTRACED);
+	return 1;
+}
+
+int bg(char ** listaPalavras){
+	Celula *p;
+	int pos = atoi(listaPalavras[1]);
+	p = selecao(ini, pos);
+	strcpy(p->estado, "Executando ");
+	kill(p->pid, SIGCONT);
+	return 1;
+}
 
 /* Essa função tem como finalidade identificar o comando. */ // A ideia é essa funcao meio que organizar a logica, ai tera uma função pra cada funcionalidade do shell.
 int interComando(char *buffer){
@@ -395,22 +412,11 @@ int interComando(char *buffer){
 		imprime(ini);
 		return 1;
 	}
-	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 2){ // Na verdade nao armazenamos os pids dos processos, só o comando e o estado deles, o fg e bg pegam por indice. ou vazio
-		pid_t pid;                                      // utilizando o + como o ultimo colocado na lista e o que sera chamado e o - como o penultimo.
-		int pos = atoi(listaPalavras[1]);
-		Celula *p = selecao(ini,pos);
-		pidForground = p->pid;
-		waitpid(p->pid,NULL,WUNTRACED);
-		return 1;
-		
+	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 2){
+		return fg(listaPalavras);
 	}
 	if(strcmp(listaPalavras[0],"bg") == 0 && tam == 2){
-		Celula *p;
-		int pos = atoi(listaPalavras[1]);
-		p = selecao(ini, pos);
-		strcpy(p->estado, "Executando ");
-		kill(p->pid, SIGCONT);
-		return 1;
+		return bg(listaPalavras);
 	}
 	if(strcmp(listaPalavras[0],"cd") == 0){
 		return cd(listaPalavras[1], tam);
@@ -444,14 +450,17 @@ int main(){
 	printf("\e[1;1H\e[2J");// Limpa o terminal antes de inicilizar o miniShell.
 
 	do{
-
+		printf("\033[0;31m"); // Colocar a cor do output do terminal como verde.
 		printf("[miniShell]:");
-		pwd(0);
+		printf("\033[0;34m"); // Colocar a cor do output do terminal como azul.
+		pwd(0); // Printa o diretório atual.
+		printf("\033[0;31m"); // Colocar a cor do output do terminal como verde.
 		printf("$ ");
-		fgets(buffer,254,stdin);
+		printf("\033[0m"); // Reseta a cor.
+		fgets(buffer,254,stdin); // Recebe a entrada em buffer.
 		buffer[strlen(buffer)-1] = '\0';
-		resp = interComando(buffer);
-		memset(buffer,0,sizeof(buffer));
+		resp = interComando(buffer); // Interpreta a entrada
+		memset(buffer,0,sizeof(buffer)); // Reseta o buffer.
 	}while(resp);
 
 	return 0;
