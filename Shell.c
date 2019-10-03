@@ -1,4 +1,5 @@
 /* Primeiro trabalho de lab de SO. */
+/* Problema no fg quando da ctrl+c ele mata todo mundo, problema em colocar comando invalido na lista dentro do progfunc. */
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
@@ -362,8 +363,11 @@ void sigtstp_rotina(int signum){
 			printf("erro encontrado ao matar processo (%d): %s\n", pidForground, strerror(errno));
 			return;
 		}
-		insere(&ini, pidForground, ultimoComando, tamComando);
 		p = busca(ini,pidForground);
+		if(p == NULL){
+			insere(&ini, pidForground, ultimoComando, tamComando);
+			p = busca(ini,pidForground);
+		}
 		strcpy(p->estado, "Parado ");
 		printf("\n[%d] %s %s\n", p->chave, p->estado, p->comando); 
 	}
@@ -422,10 +426,6 @@ int interComando(char *buffer){
 	// Caso nenhum desses comandos ele vai interpretar como os casos de prog.	
 	progFunc(listaPalavras, tam);
 	pidForground = -1; // Atualiza o pid do processo em forground como invalido.
-
-	// if(status != -1){ // Foi transferido para a função profFunc.
-	// 	insere(&ini, status);
-	// }
 
 	free(listaPalavras);
 	return 1;
