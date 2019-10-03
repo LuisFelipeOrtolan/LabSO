@@ -393,8 +393,10 @@ int interComando(char *buffer){
 	}
 	if(strcmp(listaPalavras[0],"fg") == 0 && tam == 2){ // Na verdade nao armazenamos os pids dos processos, só o comando e o estado deles, o fg e bg pegam por indice. ou vazio
 		pid_t pid;                                      // utilizando o + como o ultimo colocado na lista e o que sera chamado e o - como o penultimo.
-		pid = sscanf("%d", listaPalavras[1]);
-		waitpid(pid, NULL, 0);
+		int pos = atoi(listaPalavras[1]);
+		Celula *p = selecao(ini,pos);
+		pidForground = p->pid;
+		waitpid(p->pid,NULL,WUNTRACED);
 		return 1;
 		
 	}
