@@ -1,4 +1,7 @@
-/* Primeiro trabalho de lab de SO. */
+/* 	Primeiro trabalho de lab de SO. 
+	Alunos: Luís Felipe Corrêa Ortolan RA:759375
+			Roseval Malaquias 						*/
+
 /* Problema no fg quando da ctrl+c ele mata todo mundo, problema em colocar comando invalido na lista dentro do progfunc. */
 #include <unistd.h>
 #include <sys/types.h>
