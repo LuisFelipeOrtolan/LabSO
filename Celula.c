@@ -3,14 +3,14 @@
 #include <string.h>
 #include "Celula.h"
 
-Celula *lst = NULL;
 int nroProc = 1;
 
-void rearranjaChaves(){
+void rearranjaChaves(Celula *lst, int chave){
 	Celula *p = lst;
 	while(p != NULL){
-		if(p->chave > nroProc)
-			p->chave--;
+		if(p->chave > chave)
+			p->chave = p->chave-1;
+		p = p->prox;
 	}
 }
 
@@ -75,10 +75,12 @@ Celula * retira(Celula *lst, pid_t pid){
 	Celula *p, *q;
 	p = lst;
 	q = lst->prox;
+	int chave;
 	if(p->pid == pid){
 		nroProc--;
+		chave = p->chave;
 		free(p);
-		rearranjaChaves();
+		rearranjaChaves(lst, chave);
 		return q;
 	}
 	while(q != NULL && q->pid != pid){
@@ -87,10 +89,10 @@ Celula * retira(Celula *lst, pid_t pid){
 	}
 	if(q != NULL){
 		nroProc--;
-		printf("hello (%d)\n", nroProc);
 		p->prox = q->prox;
+		chave = q->chave;
 		free(q);
-		rearranjaChaves();
+		rearranjaChaves(lst, chave);
 		return lst;
 	}
 	return lst;
