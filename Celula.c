@@ -75,8 +75,12 @@ Celula * retira(Celula *lst, pid_t pid){
 	Celula *p, *q;
 	p = lst;
 	q = lst->prox;
-	if(p->pid == pid)
-		return p->prox;
+	if(p->pid == pid){
+		nroProc--;
+		free(p);
+		rearranjaChaves();
+		return q;
+	}
 	while(q != NULL && q->pid != pid){
 		p = q;
 		q = q->prox;
