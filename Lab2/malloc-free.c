@@ -32,9 +32,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define BLOCK_SIZE 20
+#define BLOCK_SIZE 40
 
 typedef struct s_block *t_block;
+#define align4(x) ( ( x - 1 ) / 4 * 4 + 4 )
 
 struct s_block {
 	size_t size;
@@ -52,7 +53,7 @@ void *base = NULL;
 	Output: Dois blocos, um com tamanho s e outro com o tamanho do original - s. */
 void separaBloco(t_block bloco, size_t tam){
 	t_block novo; //Cria um novo bloco.
-	novo = bloco->data + tam; 
+	novo = (t_block)bloco->data + tam; 
 	novo->size = bloco->size - tam - BLOCK_SIZE; //Tamanho do novo bloco é tamanho do bloco original, menos o novo tamanho, menos o tamanho dos metadados.
 	novo->next = bloco->next; //Insere novo bloco a direita do original.
 	novo->prev = bloco;
@@ -103,7 +104,8 @@ t_block achaBloco(t_block *last, size_t tam){
 void *newMalloc(size_t size){
 	t_block bloco, last;
 	size_t tam;
-	tam = size * 4;
+	//tam = size * 4;
+	tam = align4(size); 
 	if(base){ // Se existem blocos alocados na lista
 		last = base; 
 		bloco = achaBloco(&last,tam); //Acha um espaço disponível.
@@ -131,12 +133,14 @@ void *newMalloc(size_t size){
 	Input: Um bloco.
 	Output: Um bloco fundido se o próximo bloco estava livre ou só o bloco passado se não estava livre. */
 t_block fundeBlocos(t_block bloco){
-	if(bloco->next != NULL && bloco->next->free == 1){ //Se existe um próximo bloco e ele está livre,
-		bloco->size = bloco-> size + BLOCK_SIZE + bloco->next->size; //Funde os blocos.
-		bloco->next = bloco->next->next;	
-		if(bloco->next) //Se existia um bloco depois do bloco fundido, 
-			bloco->next->prev = bloco; //Atualiza o ponteiro de anterior.
-	}
+	if(bloco->next != NULL) //Se existe um próximo bloco e ele está livre,
+		if(bloco->next->free == 1){
+			bloco->size = bloco-> size + BLOCK_SIZE + bloco->next->size; //Funde os blocos.
+			bloco->next = bloco->next->next;	
+			if(bloco->next) //Se existia um bloco depois do bloco fundido, 
+				bloco->next->prev = bloco; //Atualiza o ponteiro de anterior.
+		}
+
 	return bloco; //Retorna o bloco original ou fundido.
 }
 
@@ -144,9 +148,13 @@ t_block fundeBlocos(t_block bloco){
 	Input: Um ponteiro.
 	Output: O bloco apontado pelo ponteiro. */
 t_block getBlock(void *p){
-	char *temp;
-	temp = p;
-	return (p = temp -= BLOCK_SIZE);
+	t_block baseAux = base;
+	while(baseAux){
+		if(baseAux->ptr == p)// Caso seja igual, entao p corresponde a um espaco alocado pelo newMalloc.	 
+			return baseAux;
+		baseAux = baseAux->next;
+	}
+	return baseAux;
 }
 
 /* 	Função que retorna se um endereço de ponteiro é válido ou não.
@@ -161,34 +169,69 @@ int enderecoValido(void *p){
 
 /*	Implementação da função free.
 	Input: Um ponteiro.
-	Output: O conteúdo do ponteiro é desalocado. */
+	Output: O conteúdo do ponteiro é desalocado. */ 
 void newFree(void *ptr){
 	t_block bloco;
 	if(enderecoValido(ptr)){
 		bloco = getBlock(ptr);
 		bloco->free = 1;
-		if(bloco->prev && bloco->prev->free)
-			bloco = fundeBlocos(bloco->prev);
-		if(bloco->next)
+		if(bloco->prev)
+			if(bloco->prev->free)
+				bloco = fundeBlocos(bloco->prev);
+
+		if(bloco->next){
 			fundeBlocos(bloco);
+		}
 		else{
-			if(bloco->prev)
+			if(bloco->prev){
 				bloco->prev->next = NULL;
-			else
-				base = NULL;
+			}
+			else{
+				// base = NULL;
+				return;
+			}
 			brk(bloco);
 		}
+
 	}
 }
 
 int main(){
+	
+	printf("size meta: %ld\n\n",sizeof(struct s_block));
+
 	int *vetor = newMalloc(sizeof(int) * 10);
 	for(int i = 0; i < 10; i++)
 		vetor[i] = i;
 
 	for(int i = 0; i < 10; i++)
 		printf("valor: %d\n",vetor[i]);
-
+	printf("\n");
+	t_block aux = base;
 	newFree(vetor);
+
+	int *vetor1 = newMalloc(sizeof(int) * 5);
+	for(int i = 0; i < 5; i++)
+		vetor1[i] = i*99;
+
+	for(int i = 0; i < 5; i++)
+		printf("valor: %d\n",vetor1[i]);
+	printf("\n");
+	printf("ponteiro: %p\n",vetor1);
+	//newFree(vetor1);
+
+	
+
+	
+	while(aux){
+		printf("\nAux[%p]\n",aux);
+		printf("Size[%d]\n",aux->size);
+		printf("Next[%p]\n",aux->next);
+		printf("Prev[%p]\n",aux->prev);
+		printf("Ptr[%p]\n",aux->ptr);
+		printf("Free[%d]\n",aux->free);
+		aux = aux->next;
+	}
+
 	return 0;
 }
