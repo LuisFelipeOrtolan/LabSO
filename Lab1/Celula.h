@@ -1,3 +1,6 @@
+/* biblioteca "Celula.h". Utilizada na lista de processos do miniShell. 
+ * Todas informações acerca dos alunos envolvidos estão no cabeçalho do arquivo "Shell.c". */
+
 #include <stdio.h>
 #include <stdlib.h>
 

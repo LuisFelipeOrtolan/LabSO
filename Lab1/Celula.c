@@ -1,3 +1,6 @@
+/* Interface da biblioteca criada, "Celula.h". Utilizada na lista de processos do miniShell. 
+ * Todas informações acerca dos alunos envolvidos estão no cabeçalho do arquivo "Shell.c". */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +10,7 @@ int nroProc = 1;
 
 /*Função responsável por reorganizar os números que correspondem a posição
 na fila dos processos em segundo plano ou parados depois que um deles foi removido
-Inputs: -
+Inputs: Apontador para o começo da lista, inteiro referent a chave
 Output: uma lista com valores reorganizados*/
 void rearranjaChaves(Celula *lst, int chave){
 	Celula *p = lst;
@@ -54,7 +57,6 @@ Inputs: Endereço do primeiro nó da lista
 Output: Todos as células da lista impressas no terminal*/
 void imprime(Celula *lst){
 	Celula *p = lst;
-	int i = 0;
 	while(p != NULL){
 		printf("[%d]", p->chave);
 		if(p->chave == nroProc - 1)
