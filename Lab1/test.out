@@ -1,8 +1,0 @@
-i: 50, j: 20
-
-argc: 5
-argv[0]: ./esperaEntrada
-argv[1]: <
-argv[2]: test.in
-argv[3]: >
-argv[4]: test.out
